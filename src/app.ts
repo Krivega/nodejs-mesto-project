@@ -1,7 +1,8 @@
 import http from 'node:http';
 
-import { PORT } from '@/config';
-import log from '@/log';
+import { PORT } from '@/config.js';
+import log from '@/log.js';
+import '@/temp';
 
 import type { IncomingMessage, ServerResponse } from 'node:http';
 
