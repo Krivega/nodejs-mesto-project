@@ -1,42 +1,26 @@
-import { errors } from 'celebrate';
 import express from 'express';
 
-import type { Request, Response, NextFunction } from 'express';
 import { PORT } from './config';
 import connectDb from './db';
 import log from './log';
-import cardsRouter from './routes/cards';
-import usersRouter from './routes/users';
-
-import type { TErrorWithStatusCode } from './errors/types';
+import addUserToRequest from './middlewares/addUserToRequest';
+import errorHandlers from './middlewares/errorHandlers';
+import router from './routes';
 
 const app = express();
 
 app.use(express.json());
 
-app.use((req: Request, _res: Response, next: NextFunction) => {
-  // @ts-expect-error
-  req.user = {
-    _id: '693019c29518a1d8f4e3e8aa',
-  };
+app.use(addUserToRequest);
+app.use(router);
 
-  next();
-});
+app.use(errorHandlers);
 
-app.use('/users', usersRouter);
-app.use('/cards', cardsRouter);
-
-app.use(errors());
-// eslint-disable-next-line @typescript-eslint/max-params, no-unused-vars
-app.use((error: TErrorWithStatusCode, _req: Request, res: Response, _next: NextFunction) => {
-  const { statusCode = 500, message } = error;
-
-  res.status(statusCode).send({
-    message: statusCode === 500 ? 'На сервере произошла ошибка' : message,
+connectDb().then(() => {
+  app.listen(PORT, () => {
+    log('Server started on PORT:', `http://localhost:${PORT}`);
   });
-});
-
-app.listen(PORT, () => {
-  log('Server started on PORT:', `http://localhost:${PORT}`);
-  connectDb();
+}).catch((error) => {
+  log('Error connecting to database:', error);
+  process.exit(1);
 });

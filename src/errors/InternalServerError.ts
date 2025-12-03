@@ -1,13 +1,13 @@
 import type { TErrorWithStatusCode } from './types';
 import { EHttpStatus } from './types';
 
-class NotFoundError extends Error implements TErrorWithStatusCode {
+class InternalServerError extends Error implements TErrorWithStatusCode {
   public statusCode: EHttpStatus;
 
   public constructor(message: string) {
     super(message);
-    this.statusCode = EHttpStatus.NotFound;
+    this.statusCode = EHttpStatus.InternalServerError;
   }
 }
 
-export default NotFoundError;
+export default InternalServerError;
