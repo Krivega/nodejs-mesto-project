@@ -1,45 +1,136 @@
+import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
+import validator from 'validator';
+
+import { unauthorizedError, userNotExistsError } from '../errors/index';
 
 export interface IUser {
   _id: string;
+  email: string;
+  password: string;
   name: string;
   about: string;
   avatar: string;
 }
 
-const userSchema = new mongoose.Schema({
-  name: {
+export interface IUserCreate {
+  email: string;
+  password: string;
+  name?: string;
+  about?: string;
+  avatar?: string;
+}
+
+export interface IUserPublic {
+  _id: string;
+  email: string;
+  name: string;
+  about: string;
+  avatar: string;
+}
+
+interface IUserModel extends mongoose.Model<IUser> {
+  checkUserExists: (userId: string) => Promise<boolean>;
+  createUser: (user: IUserCreate) => Promise<IUserPublic>;
+  findUserByCredentials: (params: { email: string; password: string }) => Promise<IUserPublic>;
+}
+
+const userSchema = new mongoose.Schema<IUser, IUserModel>({
+  email: {
     type: String,
     required: true,
+    unique: true,
+    validate: {
+      validator: (value: string) => validator.isEmail(value),
+      message: 'Некорректный формат email',
+    },
+  },
+  password: {
+    type: String,
+    required: true,
+    select: false,
+  },
+  name: {
+    type: String,
+    required: false,
     minlength: 2,
     maxlength: 30,
+    default: 'Жак-Ив Кусто',
   },
   about: {
     type: String,
-    required: true,
+    required: false,
     minlength: 2,
     maxlength: 200,
+    default: 'Исследователь',
   },
   avatar: {
     type: String,
-    required: true,
+    required: false,
+    default: 'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png',
+    validate: {
+      validator: (value: string) => validator.isURL(value),
+      message: 'Некорректный формат URL',
+    },
   },
 });
 
-export const userModelName = 'user';
+const parseUserToResponse = (user: IUser): IUserPublic => ({
+  _id: String(user._id),
+  email: user.email,
+  name: user.name,
+  about: user.about,
+  avatar: user.avatar,
+});
 
-const userModel = mongoose.model<IUser>(userModelName, userSchema);
-
-export const checkUserExists = async (userId: string) => {
+userSchema.statics.checkUserExists = async function checkUserExists(
+  userId: string,
+): Promise<boolean> {
   let isUserExists = false;
 
   try {
-    isUserExists = (await userModel.exists({ _id: userId })) !== null;
+    isUserExists = (await this.exists({ _id: userId })) !== null;
   } catch {
     isUserExists = false;
   }
 
   return isUserExists;
 };
+
+userSchema.statics.createUser = async function createUser(
+  params: IUserCreate,
+): Promise<IUserPublic> {
+  const hashedPassword = await bcrypt.hash(params.password, 10);
+
+  const userCreated = await this.create({ ...params, password: hashedPassword });
+
+  return parseUserToResponse(userCreated);
+};
+
+userSchema.statics.findUserByCredentials = async function findUserByCredentials({
+  email,
+  password,
+}: {
+  email: string;
+  password: string;
+}): Promise<IUserPublic> {
+  const user: IUser | null = await this.findOne({ email }).select('+password');
+
+  if (!user) {
+    throw userNotExistsError;
+  }
+
+  const isPasswordValid = await bcrypt.compare(password, user.password);
+
+  if (!isPasswordValid) {
+    throw unauthorizedError;
+  }
+
+  return parseUserToResponse(user);
+};
+
+export const userModelName = 'user';
+
+const userModel = mongoose.model<IUser, IUserModel>(userModelName, userSchema);
 
 export default userModel;

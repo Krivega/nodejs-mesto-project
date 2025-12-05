@@ -1,8 +1,9 @@
-import type { TErrorWithStatusCode } from './types';
 import { EHttpStatus } from './types';
 
+import type { TErrorWithStatusCode, THttpStatus } from './types';
+
 class InternalServerError extends Error implements TErrorWithStatusCode {
-  public statusCode: EHttpStatus;
+  public statusCode: THttpStatus;
 
   public constructor(message: string) {
     super(message);

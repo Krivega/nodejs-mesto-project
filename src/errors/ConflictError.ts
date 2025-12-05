@@ -2,13 +2,13 @@ import { EHttpStatus } from './types';
 
 import type { TErrorWithStatusCode, THttpStatus } from './types';
 
-class NotFoundError extends Error implements TErrorWithStatusCode {
+class ConflictError extends Error implements TErrorWithStatusCode {
   public statusCode: THttpStatus;
 
   public constructor(message: string) {
     super(message);
-    this.statusCode = EHttpStatus.NotFound;
+    this.statusCode = EHttpStatus.Conflict;
   }
 }
 
-export default NotFoundError;
+export default ConflictError;

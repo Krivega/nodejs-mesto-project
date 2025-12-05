@@ -1,23 +1,22 @@
 import express from 'express';
 
 import {
-  createUser,
-  getUsers,
+  getMe,
   getUserById,
-  createUserSchema,
   getUserByIdSchema,
-  updateUserByIdSchema,
+  getUsers,
+  updateUserAvatarById,
   updateUserAvatarByIdSchema,
   updateUserById,
-  updateUserAvatarById,
+  updateUserByIdSchema,
 } from '../controllers/users';
 
 const router = express.Router();
 
 router.get('/', getUsers);
-router.get('/:userId', getUserByIdSchema, getUserById);
-router.post('/', createUserSchema, createUser);
+router.get('/me', getMe);
 router.put('/me', updateUserByIdSchema, updateUserById);
 router.patch('/me/avatar', updateUserAvatarByIdSchema, updateUserAvatarById);
+router.get('/:userId', getUserByIdSchema, getUserById);
 
 export default router;

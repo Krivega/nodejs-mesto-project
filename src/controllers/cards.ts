@@ -1,9 +1,9 @@
 import { celebrate, Joi } from 'celebrate';
 
-import type { Request, Response, NextFunction } from 'express';
-import NotFoundError from '../errors/NotFoundError';
-import getMeUserId from './getMeUserId';
-import cardModel, { checkCardExists } from '../models/card';
+import type { NextFunction, Request, Response } from 'express';
+import { cardNotExistsError } from '../errors/index';
+import cardModel from '../models/card';
+import { getMeUserId } from './userId';
 
 import type { ICard } from '../models/card';
 import type { IUser } from '../models/user';
@@ -15,13 +15,11 @@ export const createCardSchema = celebrate({
   }),
 });
 
-const cardNotExistsError = new NotFoundError('Карточка не найдена');
-
 const getCardId = async (req: Request): Promise<string> => {
   const { cardId } = req.params;
 
   return Promise.resolve().then(async () => {
-    const isCardExists = await checkCardExists(cardId);
+    const isCardExists = await cardModel.checkCardExists(cardId);
 
     if (!isCardExists) {
       throw cardNotExistsError;
@@ -84,8 +82,8 @@ export const deleteCardByIdSchema = celebrate({
   }),
 });
 
-export const deleteCardById = async (req: Request, res: Response, next: NextFunction) => getCardId(req)
-  .then((cardId) => cardModel.findByIdAndDelete(cardId))
+export const deleteCardById = async (req: Request, res: Response, next: NextFunction) => getMeUserId(req)
+  .then((userId) => cardModel.findByIdAndDelete(req.params.cardId, { owner: userId }))
   .then(resolveSendCardToResponse(res, next))
   .catch(next);
 
