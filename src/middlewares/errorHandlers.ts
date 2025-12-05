@@ -7,7 +7,7 @@ import type { TErrorWithStatusCode } from '../errors/types';
 
 const celebrateErrorHandler = (errors());
 
-const parseErrors = ((error: TErrorWithStatusCode | Error, _req: Request, res: Response, next: NextFunction) => {
+const parseErrors = ((error: TErrorWithStatusCode | Error, _req: Request, _res: Response, next: NextFunction) => {
   if ('statusCode' in error) {
     next(error);
   } else {

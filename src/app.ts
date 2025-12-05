@@ -22,5 +22,5 @@ connectDb().then(() => {
   });
 }).catch((error) => {
   log('Error connecting to database:', error);
-  process.exit(1);
+  throw new Error('Failed to connect to database');
 });
