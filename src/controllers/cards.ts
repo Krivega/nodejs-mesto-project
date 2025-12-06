@@ -6,7 +6,6 @@ import cardModel from '../models/card';
 import { getAuthenticatedUserId } from './userId';
 
 import type { ICard } from '../models/card';
-import type { IUser } from '../models/user';
 
 export const createCardSchema = celebrate({
   body: Joi.object().keys({
@@ -55,7 +54,7 @@ export const createCard = async (
   const { name, link } = req.body;
 
   return getAuthenticatedUserId(req)
-    .then(async (userId) => cardModel.create({ name, link, owner: userId as unknown as IUser }))
+    .then(async (userId) => cardModel.createCard({ name, link, ownerId: userId }))
     .then(resolveSendCardToResponse(res, next))
     .catch(next);
 };
