@@ -2,7 +2,7 @@ import { celebrate, Joi } from 'celebrate';
 import validator from 'validator';
 
 import type { NextFunction, Request, Response } from 'express';
-import { userNotExistsError, unauthorizedError, conflictError } from '../errors/index';
+import { userNotExistsError, conflictError } from '../errors/index';
 import { isMongoDuplicateKeyError } from '../models/errors';
 import userModel from '../models/user';
 import { login as loginAuth } from './auth';
@@ -33,16 +33,13 @@ export const createUserSchema = celebrate({
 
 const getUserId = async (req: Request): Promise<string> => {
   const { userId } = req.params;
+  const isUserExists = await userModel.checkUserExists(userId);
 
-  return Promise.resolve().then(async () => {
-    const isUserExists = await userModel.checkUserExists(userId);
+  if (!isUserExists) {
+    throw userNotExistsError;
+  }
 
-    if (!isUserExists) {
-      throw userNotExistsError;
-    }
-
-    return userId;
-  });
+  return userId;
 };
 
 const parseUserToResponse = (user: IUserPublic) => ({
@@ -102,9 +99,6 @@ export const login = async (
 
   return userModel
     .findUserByCredentials({ email, password })
-    .catch(() => {
-      throw unauthorizedError;
-    })
     .then((user) => {
       loginAuth(user._id, res);
 
