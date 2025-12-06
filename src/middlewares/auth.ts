@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 import { verify } from '../controllers/auth';
-import { setUserIdToReq } from '../controllers/userId';
+import { setAuthenticatedUserIdToReq } from '../controllers/userId';
 import UnauthorizedError from '../errors/UnauthorizedError';
 
 const auth = (req: Request, _res: Response, next: NextFunction): void => {
@@ -15,7 +15,7 @@ const auth = (req: Request, _res: Response, next: NextFunction): void => {
     throw new UnauthorizedError('Необходима авторизация');
   }
 
-  setUserIdToReq(req, payload);
+  setAuthenticatedUserIdToReq(req, payload);
 
   next();
 };

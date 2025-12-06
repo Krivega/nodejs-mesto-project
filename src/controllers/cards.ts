@@ -1,9 +1,9 @@
 import { celebrate, Joi } from 'celebrate';
 
 import type { NextFunction, Request, Response } from 'express';
-import { cardNotExistsError } from '../errors/index';
+import { cardNotExistsError, forbiddenError } from '../errors/index';
 import cardModel from '../models/card';
-import { getMeUserId } from './userId';
+import { getAuthenticatedUserId } from './userId';
 
 import type { ICard } from '../models/card';
 import type { IUser } from '../models/user';
@@ -54,7 +54,7 @@ export const createCard = async (
 ) => {
   const { name, link } = req.body;
 
-  return getMeUserId(req)
+  return getAuthenticatedUserId(req)
     .then(async (userId) => cardModel.create({ name, link, owner: userId as unknown as IUser }))
     .then(resolveSendCardToResponse(res, next))
     .catch(next);
@@ -82,8 +82,15 @@ export const deleteCardByIdSchema = celebrate({
   }),
 });
 
-export const deleteCardById = async (req: Request, res: Response, next: NextFunction) => getMeUserId(req)
-  .then((userId) => cardModel.findByIdAndDelete(req.params.cardId, { owner: userId }))
+export const deleteCardById = async (req: Request, res: Response, next: NextFunction) => Promise.all([getAuthenticatedUserId(req), getCardId(req)])
+  .then(([userId, cardId]) => cardModel.findByIdAndDelete(cardId, { owner: userId }))
+  .then((card) => {
+    if (!card) {
+      throw forbiddenError;
+    }
+
+    return card;
+  })
   .then(resolveSendCardToResponse(res, next))
   .catch(next);
 
@@ -93,7 +100,7 @@ export const likeCardByIdSchema = celebrate({
   }),
 });
 
-export const likeCardById = async (req: Request, res: Response, next: NextFunction) => Promise.all([getMeUserId(req), getCardId(req)])
+export const likeCardById = async (req: Request, res: Response, next: NextFunction) => Promise.all([getAuthenticatedUserId(req), getCardId(req)])
   .then(([userId, cardId]) => cardModel.findByIdAndUpdate(cardId, { $addToSet: { likes: userId } }, { new: true }))
   .then(resolveSendCardToResponse(res, next))
   .catch(next);
@@ -104,7 +111,7 @@ export const dislikeCardByIdSchema = celebrate({
   }),
 });
 
-export const dislikeCardById = async (req: Request, res: Response, next: NextFunction) => Promise.all([getMeUserId(req), getCardId(req)])
+export const dislikeCardById = async (req: Request, res: Response, next: NextFunction) => Promise.all([getAuthenticatedUserId(req), getCardId(req)])
   .then(([userId, cardId]) => cardModel.findByIdAndUpdate(cardId, { $pull: { likes: userId } }, { new: true }))
   .then(resolveSendCardToResponse(res, next))
   .catch(next);

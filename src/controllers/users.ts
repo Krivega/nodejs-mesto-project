@@ -6,7 +6,7 @@ import { userNotExistsError, unauthorizedError, conflictError } from '../errors/
 import { isMongoDuplicateKeyError } from '../models/errors';
 import userModel from '../models/user';
 import { login as loginAuth } from './auth';
-import { getMeUserId } from './userId';
+import { getAuthenticatedUserId } from './userId';
 
 import type { IUser, IUserPublic } from '../models/user';
 
@@ -150,7 +150,7 @@ export const updateUserById = async (
   req: Request<unknown, unknown, { name: string; about: string }>,
   res: Response,
   next: NextFunction,
-) => getMeUserId(req)
+) => getAuthenticatedUserId(req)
   .then(async (userId) => userModel.findByIdAndUpdate(userId, req.body))
   .then(resolveSendUserToResponse(res, next))
   .catch(next);
@@ -165,12 +165,12 @@ export const updateUserAvatarById = async (
   req: Request<unknown, unknown, { avatar: string }>,
   res: Response,
   next: NextFunction,
-) => getMeUserId(req)
+) => getAuthenticatedUserId(req)
   .then(async (userId) => userModel.findByIdAndUpdate(userId, req.body))
   .then(resolveSendUserToResponse(res, next))
   .catch(next);
 
-export const getMe = async (req: Request, res: Response, next: NextFunction) => getMeUserId(req)
+export const getMe = async (req: Request, res: Response, next: NextFunction) => getAuthenticatedUserId(req)
   .then((userId) => userModel.findById(userId))
   .then(resolveSendUserToResponse(res, next))
   .catch(next);
