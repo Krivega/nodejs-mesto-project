@@ -8,6 +8,7 @@ import auth from './middlewares/auth';
 import errorHandlers from './middlewares/errorHandlers';
 import { requestLogger, errorLogger } from './middlewares/logger';
 import authRouter from './routes/auth';
+import crashTestRouter from './routes/crashTest';
 import authorizedRouter from './routes/authorizedRouter';
 
 const app = express();
@@ -16,6 +17,7 @@ app.use(cookieParser());
 app.use(express.json());
 
 app.use(requestLogger);
+app.use(crashTestRouter);
 app.use(authRouter);
 
 app.use(auth, authorizedRouter);
